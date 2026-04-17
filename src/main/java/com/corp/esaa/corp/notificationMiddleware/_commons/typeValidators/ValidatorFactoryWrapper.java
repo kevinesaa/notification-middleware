@@ -1,17 +1,18 @@
 package com.corp.esaa.corp.notificationMiddleware._commons.typeValidators;
 
+import com.corp.esaa.corp.notificationMiddleware._commons.models.domain.NotificationType;
 import com.corp.esaa.corp.notificationMiddleware._commons.typeValidators.abstracts.IValidatorFactory;
 import com.corp.esaa.corp.notificationMiddleware._commons.typeValidators.abstracts.IValidatorFactoryWrapper;
 import com.corp.esaa.corp.notificationMiddleware._commons.typeValidators.factories.SmtpDefaultValidatorFactory;
 import org.springframework.stereotype.Component;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 @Component
 public class ValidatorFactoryWrapper implements IValidatorFactoryWrapper {
 
-    private static Map<String,IValidatorFactory> factoriesMap;
+    private static ConcurrentMap<String,IValidatorFactory> factoriesMap;
 
     @Override
     public IValidatorFactory getFactoryByType(final String type) {
@@ -26,7 +27,8 @@ public class ValidatorFactoryWrapper implements IValidatorFactoryWrapper {
     }
 
     private void initFactories() {
-        factoriesMap = new HashMap<>();
-        factoriesMap.put("smtp",new SmtpDefaultValidatorFactory());
+
+        factoriesMap = new ConcurrentHashMap<>();
+        factoriesMap.put(NotificationType.SMTP.getKeyName(),new SmtpDefaultValidatorFactory());
     }
 }

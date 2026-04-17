@@ -1,17 +1,18 @@
 package com.corp.esaa.corp.notificationMiddleware.messageProcessor;
 
+import com.corp.esaa.corp.notificationMiddleware._commons.models.domain.NotificationType;
 import com.corp.esaa.corp.notificationMiddleware.messageProcessor.abstracts.IFactoryWrapper;
 import com.corp.esaa.corp.notificationMiddleware.messageProcessor.abstracts.IMessageProcessorFactory;
 import com.corp.esaa.corp.notificationMiddleware.messageProcessor.factories.DefaultSmtpProcessorFactory;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 @Service
 public class FactoryWrapper implements IFactoryWrapper {
 
-    private static Map<String,IMessageProcessorFactory> factoriesMap;
+    private static ConcurrentMap<String,IMessageProcessorFactory> factoriesMap;
 
     public IMessageProcessorFactory getFactoryByType(final String type) {
         if(factoriesMap == null) {
@@ -25,7 +26,7 @@ public class FactoryWrapper implements IFactoryWrapper {
     }
 
     private  void initFactories() {
-        factoriesMap = new HashMap<>();
-        factoriesMap.put("smtp",new DefaultSmtpProcessorFactory());
+        factoriesMap = new ConcurrentHashMap<>();
+        factoriesMap.put(NotificationType.SMTP.getKeyName(), new DefaultSmtpProcessorFactory());
     }
 }
