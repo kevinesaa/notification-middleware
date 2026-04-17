@@ -5,12 +5,14 @@ import java.util.List;
 public class PostMessageRequestModel {
 
     private String notificationType;
+
+    private String senderEmail;
+    private List<String> recipientsEmails;
+
     private String subject;
     private String messageBody;
     private String htmlMessage;
 
-    private String senderEmail;
-    private List<String> recipientsEmails;
     private List<String> ccEmails;
     private List<String> bccEmails;
     private List<String> replayToEmails;
@@ -25,10 +27,10 @@ public class PostMessageRequestModel {
     }
 
     public String getNotificationType() {
-        return notificationType;
+        return notificationType == null?null:notificationType.toLowerCase();
     }
 
-    public void setNotificationType(String notificationType) {
+    public void setNotificationType(final String notificationType) {
         this.notificationType = notificationType;
     }
 
