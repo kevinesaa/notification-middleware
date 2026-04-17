@@ -1,0 +1,69 @@
+services:
+  notification-middleware:
+    build: .
+    ports:
+      - "${APP_PORT:-8080}:8080"
+    volumes:
+      - ${APP_LOGS_PATH}:/app/logs
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: ${RABBITMQ_PORT:-5672}
+      RABBITMQ_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_PASS: ${RABBITMQ_PASS:-guest}
+      RABBITMQ_QUEUE_NAME: ${RABBITMQ_QUEUE_NAME:-notification.queue}
+      RABBITMQ_EXCHANGE_NAME: ${RABBITMQ_EXCHANGE_NAME:-notification.exchange}
+      RABBITMQ_ROUTING_KEY: ${RABBITMQ_ROUTING_KEY:-notification.key}
+    depends_on:
+      loki:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+
+  promtail:
+    image: grafana/promtail:2.9.4
+    volumes:
+      - ${APP_LOGS_PATH}:/var/log/app:ro
+      - ./config/promtail.yml:/etc/promtail/config.yml:ro
+    command: -config.file=/etc/promtail/config.yml
+    depends_on:
+      - loki
+
+  loki:
+    image: grafana/loki:2.9.4
+    ports:
+      - "${LOKI_PORT:-3100}:3100"
+    volumes:
+      - loki-data:/loki
+      - ./config/loki.yml:/etc/loki/local-config.yaml:ro
+    command: -config.file=/etc/loki/local-config.yaml
+
+  grafana:
+    image: grafana/grafana:10.4.2
+    ports:
+      - "${GRAFANA_PORT:-3000}:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GF_ADMIN_PASSWORD:-admin}
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./config/grafana/provisioning:/etc/grafana/provisioning:ro
+    depends_on:
+      - loki
+
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    ports:
+      - "${RABBITMQ_PORT:-5672}:5672"
+      - "${RABBITMQ_MANAGEMENT_PORT:-15672}:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS:-guest}
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  loki-data:
+  grafana-data:
