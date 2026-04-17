@@ -1,7 +1,7 @@
 package com.corp.esaa.corp.notificationMiddleware.messageProcessor;
 
 import com.corp.esaa.corp.notificationMiddleware._commons.models.api.request.PostMessageRequestModel;
-import com.corp.esaa.corp.notificationMiddleware.messageProcessor.abstracts.IFactoryManager;
+import com.corp.esaa.corp.notificationMiddleware.messageProcessor.abstracts.IFactoryWrapper;
 import com.corp.esaa.corp.notificationMiddleware.messageProcessor.abstracts.IMessageProcessor;
 import com.corp.esaa.corp.notificationMiddleware.messageProcessor.abstracts.IMessageProcessorFactory;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -12,10 +12,10 @@ import org.springframework.stereotype.Component;
 @Component
 public class MessageProcessorController {
 
-    private final IFactoryManager factoryManager;
+    private final IFactoryWrapper factoryManager;
     private final ObjectMapper objectMapper;
 
-    public MessageProcessorController(final IFactoryManager factoryManager, final ObjectMapper objectMapper) {
+    public MessageProcessorController(final IFactoryWrapper factoryManager, final ObjectMapper objectMapper) {
         this.factoryManager = factoryManager;
         this.objectMapper = objectMapper;
     }

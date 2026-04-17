@@ -2,24 +2,24 @@ package com.corp.esaa.corp.notificationMiddleware._commons.models.api.response;
 
 public class CommonResponseModel {
 
-    private String appCodeName;
-    private String appMessage;
+    private final String appCodeName;
+    private final String appMessage;
 
-
-    public String getAppCodeName() {
-        return appCodeName;
+    public CommonResponseModel(final CommonResponseModelEnum v) {
+        this.appCodeName = v.name();
+        this.appMessage = v.getAppMessage();
     }
 
-    public void setAppCodeName(String appCodeName) {
+    public CommonResponseModel(final String appCodeName,final String appMessage) {
         this.appCodeName = appCodeName;
-    }
-
-    public String getAppMessage() {
-        return appMessage;
-    }
-
-    public void setAppMessage(String appMessage) {
         this.appMessage = appMessage;
     }
 
+    public String getAppCodeName() {
+        return this.appCodeName;
+    }
+
+    public String getAppMessage() {
+        return this.appMessage;
+    }
 }
