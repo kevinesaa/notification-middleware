@@ -14,6 +14,7 @@ public class FactoryWrapper implements IFactoryWrapper {
 
     private static ConcurrentMap<String,IMessageProcessorFactory> factoriesMap;
 
+    @Override
     public IMessageProcessorFactory getFactoryByType(final String type) {
         if(factoriesMap == null) {
             synchronized (FactoryWrapper.class) {

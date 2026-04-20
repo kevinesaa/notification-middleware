@@ -18,6 +18,8 @@ public class PostMessageRequestModel {
     private List<String> replayToEmails;
     private List<String> attachments;
 
+
+
     public String getMessageBody() {
         return messageBody;
     }
@@ -38,7 +40,7 @@ public class PostMessageRequestModel {
         return subject;
     }
 
-    public void setSubject(String subject) {
+    public void setSubject(final String subject) {
         this.subject = subject;
     }
 
@@ -51,7 +53,7 @@ public class PostMessageRequestModel {
     }
 
     public String getSenderEmail() {
-        return senderEmail;
+        return senderEmail == null ? null : senderEmail.toLowerCase().trim();
     }
 
     public void setSenderEmail(String senderEmail) {
