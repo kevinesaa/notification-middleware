@@ -20,7 +20,7 @@ public class PostMessageController {
     }
 
     @PostMapping({"post-message","post-message/"})
-    public ResponseEntity<CommonResponseModel> postMessage(@RequestBody PostMessageRequestModel requestModel) {
+    public ResponseEntity<CommonResponseModel> postMessage(@RequestBody final PostMessageRequestModel requestModel) {
 
         final CommonResponseModelEnum status = service.processMessage(requestModel);
         final CommonResponseModel responseBody = new CommonResponseModel(status);

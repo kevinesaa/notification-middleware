@@ -28,10 +28,15 @@ public class MessageProcessorController {
     public void processMessage(String jsonPayload) {
         logger.info("Received message: {}", jsonPayload);
         try {
+
             final PostMessageRequestModel requestModel = objectMapper.readValue(jsonPayload, PostMessageRequestModel.class);
             final IMessageProcessorFactory factory = factoryManager.getFactoryByType(requestModel.getNotificationType());
-            if (factory != null) {
-                IMessageProcessor messageProcessor = factory.getInstance();
+            if (factory == null) {
+                logger.warn("The message type is not supported: {}",requestModel.getNotificationType());
+            }
+            else {
+
+                final IMessageProcessor messageProcessor = factory.getInstance();
                 messageProcessor.process(requestModel);
             }
         } catch (JsonProcessingException e) {

@@ -1,14 +1,14 @@
 package com.corp.esaa.corp.notificationMiddleware._commons.models.domain;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 public enum NotificationType {
 
     SMTP("smtp"),
     ;
 
-    private static Map<String,NotificationType> notificationTypeMap;
+    private static ConcurrentMap<String,NotificationType> notificationTypeMap;
     private final String keyName;
 
     NotificationType(final String keyName) {
@@ -32,7 +32,7 @@ public enum NotificationType {
     }
 
     private static void initNotificationMap() {
-        notificationTypeMap = new HashMap<>();
+        notificationTypeMap = new ConcurrentHashMap<>();
         for (NotificationType item : NotificationType.values()) {
             notificationTypeMap.put(item.getKeyName(),item);
         }

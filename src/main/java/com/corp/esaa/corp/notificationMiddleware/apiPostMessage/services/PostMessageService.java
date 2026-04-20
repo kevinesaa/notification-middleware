@@ -9,11 +9,15 @@ import com.corp.esaa.corp.notificationMiddleware._commons.typeValidators.abstrac
 import com.corp.esaa.corp.notificationMiddleware.apiPostMessage.messaging.IMessagePublisher;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.amqp.AmqpException;
 import org.springframework.stereotype.Component;
 
 @Component
 public class PostMessageService implements IPostMessageService{
+
+    private static final Logger logger = LoggerFactory.getLogger(PostMessageService.class);
 
     private final IValidatorFactoryWrapper validatorFactoryWrapper;
     private final IMessagePublisher messagePublisher;
@@ -43,9 +47,11 @@ public class PostMessageService implements IPostMessageService{
             String jsonString = objectMapper.writeValueAsString(requestModel);
             messagePublisher.publish(jsonString);
         } catch (final JsonProcessingException e) {
+            logger.error("Failed to serialize message: {}", e.getMessage(), e);
             return CommonResponseModelEnum.FAIL_PARSING_JSON_BODY;
         }
         catch (final AmqpException  e) {
+            logger.error("Fail to connect with MQ: {}", e.getMessage(), e);
             return CommonResponseModelEnum.FAIL_TO_POST_ON_MQ;
         }
 
