@@ -97,7 +97,7 @@ public class DefaultSmtpValidatorEmailFormatTest {
         "user@domain.technology",
         "user@domain.international"
     })
-    public void whenEmailHasLongTldReturnTrue(String email) {
+    public void whenEmailHasLongTldReturnTrue(final String email) {
 
         boolean isValidFormat = this.defaultSmtpValidator.isEmailFormatValid(email);
         Assertions.assertTrue(isValidFormat);
@@ -123,7 +123,7 @@ public class DefaultSmtpValidatorEmailFormatTest {
         "user@domain.uk",
         "user@domain.de"
     })
-    public void whenEmailHasTwoLetterTldReturnTrue(String email) {
+    public void whenEmailHasTwoLetterTldReturnTrue(final String email) {
 
         boolean isValidFormat = this.defaultSmtpValidator.isEmailFormatValid(email);
         Assertions.assertTrue(isValidFormat);
@@ -214,7 +214,7 @@ public class DefaultSmtpValidatorEmailFormatTest {
         "user@domain;com",
         "user@domain com"
     })
-    public void whenEmailDomainHasInvalidSeparatorReturnFalse(String email) {
+    public void whenEmailDomainHasInvalidSeparatorReturnFalse(final String email) {
 
         boolean isValidFormat = this.defaultSmtpValidator.isEmailFormatValid(email);
         Assertions.assertFalse(isValidFormat);

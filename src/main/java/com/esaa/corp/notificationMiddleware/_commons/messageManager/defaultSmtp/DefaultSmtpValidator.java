@@ -18,7 +18,7 @@ public class DefaultSmtpValidator implements IInputValidator {
     // Covers 99.99% of real-world email addresses.
     // Uses Pattern.CASE_INSENSITIVE flag to support uppercase letters.
     public static final String EMAIL_REGEX =
-            "^[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$";
+            "^[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\.)+[a-z]+(?:[a-z0-9-]*[a-z])?$";
 
     @Override
     public CommonResponseModelEnum validate(final PostMessageRequestModel requestModel) {
