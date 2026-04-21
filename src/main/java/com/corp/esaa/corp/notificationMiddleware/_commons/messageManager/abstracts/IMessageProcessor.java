@@ -1,4 +1,4 @@
-package com.corp.esaa.corp.notificationMiddleware.messageProcessor.abstracts;
+package com.corp.esaa.corp.notificationMiddleware._commons.messageManager.abstracts;
 
 import com.corp.esaa.corp.notificationMiddleware._commons.models.api.request.PostMessageRequestModel;
 

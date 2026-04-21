@@ -3,7 +3,7 @@ package com.corp.esaa.corp.notificationMiddleware.apiPostMessage.controllers;
 import com.corp.esaa.corp.notificationMiddleware._commons.models.api.request.PostMessageRequestModel;
 import com.corp.esaa.corp.notificationMiddleware._commons.models.api.response.CommonResponseModel;
 import com.corp.esaa.corp.notificationMiddleware._commons.models.api.response.CommonResponseModelEnum;
-import com.corp.esaa.corp.notificationMiddleware.apiPostMessage.services.PostMessageService;
+import com.corp.esaa.corp.notificationMiddleware.apiPostMessage.services.IPostMessageService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -13,9 +13,9 @@ import org.springframework.web.bind.annotation.RestController;
 public class PostMessageController {
 
 
-    private final PostMessageService service;
+    private final IPostMessageService service;
 
-    public PostMessageController(PostMessageService service) {
+    public PostMessageController(final IPostMessageService service) {
         this.service = service;
     }
 

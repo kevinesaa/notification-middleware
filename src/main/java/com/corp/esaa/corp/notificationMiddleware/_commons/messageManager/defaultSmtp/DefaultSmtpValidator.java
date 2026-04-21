@@ -1,15 +1,17 @@
-package com.corp.esaa.corp.notificationMiddleware._commons.typeValidators.validators;
+package com.corp.esaa.corp.notificationMiddleware._commons.messageManager.defaultSmtp;
 
+import com.corp.esaa.corp.notificationMiddleware._commons.messageManager.abstracts.IInputValidator;
 import com.corp.esaa.corp.notificationMiddleware._commons.models.api.request.PostMessageRequestModel;
 import com.corp.esaa.corp.notificationMiddleware._commons.models.api.response.CommonResponseModelEnum;
-import com.corp.esaa.corp.notificationMiddleware._commons.typeValidators.abstracts.IInputValidator;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Arrays;
 import java.util.regex.Pattern;
 
-public class SmtpDefaultValidator implements IInputValidator {
+public class DefaultSmtpValidator implements IInputValidator {
 
     // https://www.baeldung.com/java-email-validation-regex
     // Regular Expression by RFC 5322
@@ -36,7 +38,7 @@ public class SmtpDefaultValidator implements IInputValidator {
 
             final List<String> emailList = combineAllEmails(requestModel);
             final boolean areEmailValid = emailList.stream()
-                    .allMatch(this::isEmailValid);
+                    .allMatch(this::isEmailFormatValid);
             if(!areEmailValid) {
                 result = CommonResponseModelEnum.BAD_FORMAT_EMAILS;
             }
@@ -47,7 +49,8 @@ public class SmtpDefaultValidator implements IInputValidator {
 
     public long countAllNotEmptyRecipients(final PostMessageRequestModel requestModel) {
 
-        final List<List<String>> allRecipients = List.of(
+
+        final List<List<String>> allRecipients = Arrays.asList(
                 requestModel.getRecipientsEmails(),
                 requestModel.getCcEmails(),
                 requestModel.getBccEmails()
@@ -68,8 +71,8 @@ public class SmtpDefaultValidator implements IInputValidator {
 
     public List<String> combineAllEmails(final PostMessageRequestModel requestModel) {
 
-        final List<List<String>> allRecipients = List.of(
-                List.of(requestModel.getSenderEmail()),
+        final List<List<String>> allRecipients =  Arrays.asList(
+                Collections.singletonList(requestModel.getSenderEmail()),
                 requestModel.getRecipientsEmails(),
                 requestModel.getCcEmails(),
                 requestModel.getBccEmails()
@@ -87,7 +90,7 @@ public class SmtpDefaultValidator implements IInputValidator {
         return emailList;
     }
 
-    public boolean isEmailValid(final String email) {
+    public boolean isEmailFormatValid(final String email) {
         return Pattern.compile(EMAIL_REGEX).matcher(email).matches();
     }
 }

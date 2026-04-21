@@ -1,7 +1,7 @@
-package com.corp.esaa.corp.notificationMiddleware.messageProcessor.processors;
+package com.corp.esaa.corp.notificationMiddleware._commons.messageManager.defaultSmtp;
 
+import com.corp.esaa.corp.notificationMiddleware._commons.messageManager.abstracts.IMessageProcessor;
 import com.corp.esaa.corp.notificationMiddleware._commons.models.api.request.PostMessageRequestModel;
-import com.corp.esaa.corp.notificationMiddleware.messageProcessor.abstracts.IMessageProcessor;
 
 public class DefaultSmtpProcessor implements IMessageProcessor {
 

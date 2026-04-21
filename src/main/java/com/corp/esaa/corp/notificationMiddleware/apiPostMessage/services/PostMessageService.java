@@ -1,29 +1,29 @@
 package com.corp.esaa.corp.notificationMiddleware.apiPostMessage.services;
 
+import com.corp.esaa.corp.notificationMiddleware._commons.messageManager.abstracts.IInputValidator;
+import com.corp.esaa.corp.notificationMiddleware._commons.messageManager.abstracts.IMessageManagerFactory;
+import com.corp.esaa.corp.notificationMiddleware._commons.messageManager.abstracts.IMessageManagerFactoryWrapper;
 import com.corp.esaa.corp.notificationMiddleware._commons.models.api.request.PostMessageRequestModel;
 import com.corp.esaa.corp.notificationMiddleware._commons.models.api.response.CommonResponseModelEnum;
 import com.corp.esaa.corp.notificationMiddleware._commons.models.domain.NotificationType;
-import com.corp.esaa.corp.notificationMiddleware._commons.typeValidators.abstracts.IInputValidator;
-import com.corp.esaa.corp.notificationMiddleware._commons.typeValidators.abstracts.IValidatorFactory;
-import com.corp.esaa.corp.notificationMiddleware._commons.typeValidators.abstracts.IValidatorFactoryWrapper;
 import com.corp.esaa.corp.notificationMiddleware.apiPostMessage.messaging.IMessagePublisher;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.AmqpException;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
-@Component
+@Service
 public class PostMessageService implements IPostMessageService{
 
     private static final Logger logger = LoggerFactory.getLogger(PostMessageService.class);
 
-    private final IValidatorFactoryWrapper validatorFactoryWrapper;
+    private final IMessageManagerFactoryWrapper factoryWrapper;
     private final IMessagePublisher messagePublisher;
 
-    public PostMessageService(IValidatorFactoryWrapper validatorFactoryWrapper, IMessagePublisher messagePublisher) {
-        this.validatorFactoryWrapper = validatorFactoryWrapper;
+    public PostMessageService(final IMessageManagerFactoryWrapper factoryWrapper, final IMessagePublisher messagePublisher) {
+        this.factoryWrapper = factoryWrapper;
         this.messagePublisher = messagePublisher;
     }
 
@@ -35,8 +35,8 @@ public class PostMessageService implements IPostMessageService{
             return CommonResponseModelEnum.NOTIFICATION_TYPE_NOT_SUPPORT;
         }
 
-        final IValidatorFactory validatorFactory = validatorFactoryWrapper.getFactoryByType(requestModel.getNotificationType());
-        final IInputValidator messageValidator = validatorFactory.getInstance();
+        final IMessageManagerFactory messageManagerFactory = factoryWrapper.getFactoryByType(requestModel.getNotificationType());
+        final IInputValidator messageValidator = messageManagerFactory.getValidatorInstance();
         final CommonResponseModelEnum validatorResult = messageValidator.validate(requestModel);
         if( validatorResult != null ) {
             return validatorResult;
