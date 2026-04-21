@@ -13,9 +13,12 @@ import java.util.regex.Pattern;
 
 public class DefaultSmtpValidator implements IInputValidator {
 
-    // https://www.baeldung.com/java-email-validation-regex
-    // Regular Expression by RFC 5322
-    public static final String EMAIL_REGEX = "^[a-zA-Z0-9_!#$%&’*+/=?`{|}~^.-]+@[a-zA-Z0-9.-]+$";
+    // https://www.regular-expressions.info/email.html
+    // Practical implementation of RFC 5322 (without IP addresses, quoted strings, or square brackets).
+    // Covers 99.99% of real-world email addresses.
+    // Uses Pattern.CASE_INSENSITIVE flag to support uppercase letters.
+    public static final String EMAIL_REGEX =
+            "^[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$";
 
     @Override
     public CommonResponseModelEnum validate(final PostMessageRequestModel requestModel) {
@@ -49,7 +52,6 @@ public class DefaultSmtpValidator implements IInputValidator {
 
     public long countAllNotEmptyRecipients(final PostMessageRequestModel requestModel) {
 
-
         final List<List<String>> allRecipients = Arrays.asList(
                 requestModel.getRecipientsEmails(),
                 requestModel.getCcEmails(),
@@ -65,13 +67,12 @@ public class DefaultSmtpValidator implements IInputValidator {
                 .filter(s -> !s.isEmpty())
                 .count();
 
-
         return total;
     }
 
     public List<String> combineAllEmails(final PostMessageRequestModel requestModel) {
 
-        final List<List<String>> allRecipients =  Arrays.asList(
+        final List<List<String>> allRecipients = Arrays.asList(
                 Collections.singletonList(requestModel.getSenderEmail()),
                 requestModel.getRecipientsEmails(),
                 requestModel.getCcEmails(),
@@ -96,6 +97,6 @@ public class DefaultSmtpValidator implements IInputValidator {
             return false;
         }
 
-        return Pattern.compile(EMAIL_REGEX).matcher(email).matches();
+        return Pattern.compile(EMAIL_REGEX, Pattern.CASE_INSENSITIVE).matcher(email).matches();
     }
 }
