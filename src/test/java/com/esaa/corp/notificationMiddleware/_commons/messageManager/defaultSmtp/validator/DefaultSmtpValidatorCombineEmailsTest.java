@@ -31,4 +31,38 @@ public class DefaultSmtpValidatorCombineEmailsTest {
         List<String> emailList = this.defaultSmtpValidator.combineAllEmails(requestModel);
         Assertions.assertTrue(emailList.isEmpty());
     }
+
+    @Test
+    public void whenThereIsSenderCombineContainsIt() {
+        final PostMessageRequestModel requestModel = new PostMessageRequestModel();
+        requestModel.setSenderEmail("test@test.com");
+        List<String> emailList = this.defaultSmtpValidator.combineAllEmails(requestModel);
+        Assertions.assertTrue(emailList.contains("test@test.com"));
+    }
+
+    @Test
+    public void whenThereIsRecipientsCombineContainsIt() {
+        final PostMessageRequestModel requestModel = new PostMessageRequestModel();
+        requestModel.setRecipientsEmails(List.of("test@test.com"));
+        List<String> emailList = this.defaultSmtpValidator.combineAllEmails(requestModel);
+        Assertions.assertTrue(emailList.contains("test@test.com"));
+    }
+
+    @Test
+    public void whenThereIsCcCombineContainsIt() {
+        final PostMessageRequestModel requestModel = new PostMessageRequestModel();
+        requestModel.setCcEmails(List.of("test@test.com"));
+        List<String> emailList = this.defaultSmtpValidator.combineAllEmails(requestModel);
+        Assertions.assertTrue(emailList.contains("test@test.com"));
+    }
+    
+    @Test
+    public void whenThereIsBccCombineContainsIt() {
+        final PostMessageRequestModel requestModel = new PostMessageRequestModel();
+        requestModel.setBccEmails(List.of("test@test.com"));
+        List<String> emailList = this.defaultSmtpValidator.combineAllEmails(requestModel);
+        Assertions.assertTrue(emailList.contains("test@test.com"));
+    }
+
+
 }
