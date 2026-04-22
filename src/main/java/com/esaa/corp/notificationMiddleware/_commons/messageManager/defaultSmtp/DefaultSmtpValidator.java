@@ -74,6 +74,7 @@ public class DefaultSmtpValidator implements IInputValidator {
 
         final List<List<String>> allRecipients = Arrays.asList(
                 Collections.singletonList(requestModel.getSenderEmail()),
+                requestModel.getReplayToEmails(),
                 requestModel.getRecipientsEmails(),
                 requestModel.getCcEmails(),
                 requestModel.getBccEmails()
