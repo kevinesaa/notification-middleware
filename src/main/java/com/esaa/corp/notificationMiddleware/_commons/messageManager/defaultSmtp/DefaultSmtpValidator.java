@@ -25,10 +25,12 @@ public class DefaultSmtpValidator implements IInputValidator {
 
         CommonResponseModelEnum result = null;
 
-        final String senderEmail = requestModel.getSenderEmail();
+        final String senderEmail =
+                requestModel.getSenderEmail() == null?null:requestModel.getSenderEmail().trim();
         if( senderEmail == null || senderEmail.isEmpty()) {
             result = CommonResponseModelEnum.MISSING_FIELD_SENDER_EMAIL;
         }
+
 
         if(result == null) {
             final long completeRecipientCount = countAllNotEmptyRecipients(requestModel);
