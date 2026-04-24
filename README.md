@@ -4,16 +4,16 @@ Middleware de notificaciones construido con **Spring Boot 3.2.5** (Java 17 + Gra
 
 ## Stack tecnológico
 
-| Componente        | Versión       |
-|-------------------|---------------|
-| Java              | 17            |
-| Spring Boot       | 3.2.5         |
-| Spring AMQP       | (via Boot)    |
-| Gson              | 2.13.2        |
-| jqwik (PBT)       | 1.8.4         |
-| RabbitMQ          | 3.13-management |
-| Loki / Promtail   | 2.9.4         |
-| Grafana           | 10.4.2        |
+| Componente        | Versión           |
+|-------------------|-------------------|
+| Java              | 17                |
+| Spring Boot       | 3.2.5             |
+| Spring AMQP       | (via Boot)        |
+| Jackson           | (via Boot)        |
+| jqwik (PBT)       | 1.8.4             |
+| RabbitMQ          | 3.13-management   |
+| Loki / Promtail   | 2.9.4             |
+| Grafana           | 10.4.2            |
 
 ---
 
@@ -50,11 +50,51 @@ Middleware de notificaciones construido con **Spring Boot 3.2.5** (Java 17 + Gra
 }
 ```
 
-**Error — RabbitMQ no disponible (`200 OK` con código de error):**
+**Tipo de notificación no soportado (`400 Bad Request`):**
+```json
+{
+  "appCodeName": "NOTIFICATION_TYPE_NOT_SUPPORT",
+  "appMessage": "it's not settings for the notification type"
+}
+```
+
+**Error de validación — falta senderEmail (`422 Unprocessable Entity`):**
+```json
+{
+  "appCodeName": "MISSING_FIELD_SENDER_EMAIL",
+  "appMessage": "field 'senderEmail' is required"
+}
+```
+
+**Error de validación — falta al menos un destinatario (`422 Unprocessable Entity`):**
+```json
+{
+  "appCodeName": "MISSING_FIELDS_RECIPIENT_EMAIL",
+  "appMessage": "required a least one recipient,cc or bcc email to send"
+}
+```
+
+**Error de validación — formato de email inválido (`400 Bad Request`):**
+```json
+{
+  "appCodeName": "BAD_FORMAT_EMAILS",
+  "appMessage": "there are emails with bad format"
+}
+```
+
+**Error de serialización (`400 Bad Request`):**
+```json
+{
+  "appCodeName": "FAIL_PARSING_JSON_BODY",
+  "appMessage": "fail parsing object to json-string for publish"
+}
+```
+
+**Error — RabbitMQ no disponible (`500 Internal Server Error`):**
 ```json
 {
   "appCodeName": "FAIL_TO_POST_ON_MQ",
-  "appMessage": null
+  "appMessage": "MQ service not available"
 }
 ```
 
@@ -79,7 +119,8 @@ PostMessageController
        │
        ▼
 PostMessageService
-       │  serializa con Gson
+       │  valida notificationType + campos requeridos
+       │  serializa con Jackson (ObjectMapper)
        ▼
 MessagePublisher ──► RabbitMQ (DirectExchange → Queue)
                                     │
@@ -87,10 +128,10 @@ MessagePublisher ──► RabbitMQ (DirectExchange → Queue)
                       MessageProcessorController (@RabbitListener)
                                     │
                                     ▼
-                            FactoryManager
+                         MessageManagerWrapper
                                     │  lookup por notificationType
                                     ▼
-                      IMessageProcessorFactory.getInstance()
+                      IMessageManagerFactory.getProcessorInstance()
                                     │
                                     ▼
                           IMessageProcessor.process()
@@ -99,13 +140,23 @@ MessagePublisher ──► RabbitMQ (DirectExchange → Queue)
 
 ### Patrón Factory para procesadores
 
-El sistema usa un patrón **Abstract Factory** para seleccionar el procesador correcto según el campo `notificationType` del mensaje:
+El sistema usa un patrón **Factory** para seleccionar el procesador correcto según el campo `notificationType` del mensaje. `MessageManagerWrapper` mantiene un mapa de factories inicializado con **double-checked locking** para thread safety.
 
-| `notificationType` | Factory                        | Processor               |
-|--------------------|--------------------------------|-------------------------|
-| `smtp`             | `DefaultSmtpProcessorFactory`  | `DefaultSmtpProcessor`  |
+| `notificationType` | Factory              | Validator               | Processor               |
+|--------------------|----------------------|-------------------------|-------------------------|
+| `smtp`             | `DefaultSmtpFactory` | `DefaultSmtpValidator`  | `DefaultSmtpProcessor`  |
 
-`FactoryManager` inicializa el mapa de factories con **double-checked locking** para thread safety. Para agregar un nuevo tipo de notificación, basta con implementar `IMessageProcessorFactory` e `IMessageProcessor` y registrarlos en `FactoryManager.initFactories()`.
+Para agregar un nuevo tipo de notificación, implementa `IMessageManagerFactory`, `IInputValidator` e `IMessageProcessor`, y regístralos en `MessageManagerWrapper.initFactories()`.
+
+### Validación SMTP
+
+`DefaultSmtpValidator` aplica las siguientes reglas en orden:
+
+1. `senderEmail` no puede ser nulo ni vacío → `MISSING_FIELD_SENDER_EMAIL`
+2. Al menos un destinatario en `recipientsEmails`, `ccEmails` o `bccEmails` → `MISSING_FIELDS_RECIPIENT_EMAIL`
+3. Todos los emails (sender + replayTo + recipients + cc + bcc) deben tener formato válido según RFC 5322 → `BAD_FORMAT_EMAILS`
+
+> `notificationType` se normaliza a minúsculas en el getter de `PostMessageRequestModel`. `senderEmail` se normaliza a minúsculas y se le aplica trim.
 
 ---
 
@@ -119,21 +170,21 @@ Copia `.env.example` a `.env` y ajusta los valores:
 cp .env.example .env
 ```
 
-| Variable                  | Default                   | Descripción                              |
-|---------------------------|---------------------------|------------------------------------------|
-| `APP_PORT`                | `8080`                    | Puerto expuesto de la aplicación         |
-| `APP_LOGS_PATH`           | —                         | Ruta del host donde se montan los logs   |
-| `RABBITMQ_HOST`           | `rabbitmq` (Docker) / `localhost` (local) | Host de RabbitMQ        |
-| `RABBITMQ_PORT`           | `5672`                    | Puerto AMQP                              |
-| `RABBITMQ_USER`           | `guest`                   | Usuario RabbitMQ                         |
-| `RABBITMQ_PASS`           | `guest`                   | Contraseña RabbitMQ                      |
-| `RABBITMQ_QUEUE_NAME`     | `notification.queue`      | Nombre de la cola                        |
-| `RABBITMQ_EXCHANGE_NAME`  | `notification.exchange`   | Nombre del exchange (DirectExchange)     |
-| `RABBITMQ_ROUTING_KEY`    | `notification.key`        | Routing key                              |
-| `RABBITMQ_MANAGEMENT_PORT`| `15672`                   | Puerto de la consola de administración   |
-| `LOKI_PORT`               | `3100`                    | Puerto de Loki                           |
-| `GRAFANA_PORT`            | `3000`                    | Puerto de Grafana                        |
-| `GF_ADMIN_PASSWORD`       | `admin`                   | Contraseña del admin de Grafana          |
+| Variable                   | Default                              | Descripción                              |
+|----------------------------|--------------------------------------|------------------------------------------|
+| `APP_PORT`                 | `8080`                               | Puerto expuesto de la aplicación         |
+| `APP_LOGS_PATH`            | —                                    | Ruta del host donde se montan los logs   |
+| `RABBITMQ_HOST`            | `rabbitmq` (Docker) / `localhost` (local) | Host de RabbitMQ                    |
+| `RABBITMQ_PORT`            | `5672`                               | Puerto AMQP                              |
+| `RABBITMQ_USER`            | `guest`                              | Usuario RabbitMQ                         |
+| `RABBITMQ_PASS`            | `guest`                              | Contraseña RabbitMQ                      |
+| `RABBITMQ_QUEUE_NAME`      | `notification.queue`                 | Nombre de la cola                        |
+| `RABBITMQ_EXCHANGE_NAME`   | `notification.exchange`              | Nombre del exchange (DirectExchange)     |
+| `RABBITMQ_ROUTING_KEY`     | `notification.key`                   | Routing key                              |
+| `RABBITMQ_MANAGEMENT_PORT` | `15672`                              | Puerto de la consola de administración   |
+| `LOKI_PORT`                | `3100`                               | Puerto de Loki                           |
+| `GRAFANA_PORT`             | `3000`                               | Puerto de Grafana                        |
+| `GF_ADMIN_PASSWORD`        | `admin`                              | Contraseña del admin de Grafana          |
 
 > `APP_LOGS_PATH` es obligatorio para el stack Docker. Ejemplo en Windows: `C:\Users\tu-usuario\Documents\_logs`
 
@@ -187,7 +238,7 @@ Los logs de la aplicación se escriben en `/app/logs/app.log` (dentro del conten
 ### Formato de log
 
 ```
-2024-01-15 10:30:45.123 [http-nio-8080-exec-1] DEBUG c.c.e.c.n._commons.filters.RequestBodyLoggingFilter - Incoming request [POST /post-message] | Headers: [...] | Body: {...}
+2024-01-15 10:30:45.123 [http-nio-8080-exec-1] DEBUG c.e.c.n._commons.filters.RequestBodyLoggingFilter - Incoming request [POST /post-message] | Headers: [...] | Body: {...}
 ```
 
 El filtro `RequestBodyLoggingFilter` loggea el raw body y headers de cada request **antes** de la deserialización. Se activa solo en nivel `DEBUG`:
@@ -198,12 +249,12 @@ logging.level.com.corp.esaa.corp.notificationMiddleware._commons.filters.Request
 
 ### Rotación de logs
 
-| Parámetro              | Valor  |
-|------------------------|--------|
-| Tamaño máximo por archivo | 10 MB |
-| Historial de archivos  | 7      |
-| Tamaño total máximo    | 100 MB |
-| Retención en Loki      | 30 días |
+| Parámetro                 | Valor   |
+|---------------------------|---------|
+| Tamaño máximo por archivo | 10 MB   |
+| Historial de archivos     | 7       |
+| Tamaño total máximo       | 100 MB  |
+| Retención en Loki         | 30 días |
 
 ### Consultas LogQL en Grafana
 
@@ -229,47 +280,55 @@ logging.level.com.corp.esaa.corp.notificationMiddleware._commons.filters.Request
 ## Estructura del proyecto
 
 ```
-src/main/java/com/corp/esaa/corp/notificationMiddleware/
+src/main/java/com/esaa/corp/notificationMiddleware/
 ├── NotificationMiddlewareApplication.java
 ├── apiPostMessage/
 │   ├── controllers/
-│   │   ├── PostMessageController.java      # POST /post-message
-│   │   └── MessagePublisher.java           # Publica en RabbitMQ vía RabbitTemplate
+│   │   └── PostMessageController.java          # POST /post-message
+│   ├── messaging/
+│   │   ├── IMessagePublisher.java
+│   │   └── MessagePublisher.java               # Publica en RabbitMQ vía RabbitTemplate
 │   └── services/
-│       └── PostMessageService.java         # Lógica de negocio, manejo de AmqpException
+│       ├── IPostMessageService.java
+│       └── PostMessageService.java             # Valida, serializa y publica el mensaje
 ├── messageProcessor/
-│   ├── MessageProcessorController.java     # @RabbitListener — consume la cola
-│   ├── FactoryManager.java                 # Registro de factories (double-checked locking)
-│   ├── abstracts/
-│   │   ├── IFactoryManager.java
-│   │   ├── IMessageProcessorFactory.java
-│   │   └── IMessageProcessor.java
-│   ├── factories/
-│   │   └── DefaultSmtpProcessorFactory.java
-│   └── processors/
-│       └── DefaultSmtpProcessor.java
+│   └── MessageProcessorController.java         # @RabbitListener — consume la cola
 ├── healthStatus/
-│   └── HealthController.java               # GET /healthStatus
+│   └── HealthController.java                   # GET /healthStatus
 └── _commons/
     ├── config/
-    │   └── RabbitMQConfig.java             # Queue, DirectExchange, Binding, Gson bean
+    │   └── RabbitMQConfig.java                 # Queue, DirectExchange, Binding
     ├── filters/
-    │   ├── RequestBodyLoggingFilter.java   # Loggea raw body/headers (OncePerRequestFilter)
-    │   └── CachingRequestWrapper.java      # Permite múltiples lecturas del InputStream
+    │   ├── RequestBodyLoggingFilter.java        # Loggea raw body/headers (OncePerRequestFilter)
+    │   └── CachingRequestWrapper.java          # Permite múltiples lecturas del InputStream
+    ├── messageManager/
+    │   ├── MessageManagerWrapper.java          # Registro de factories (double-checked locking)
+    │   ├── abstracts/
+    │   │   ├── IInputValidator.java
+    │   │   ├── IMessageManagerFactory.java
+    │   │   ├── IMessageManagerFactoryWrapper.java
+    │   │   └── IMessageProcessor.java
+    │   └── defaultSmtp/
+    │       ├── DefaultSmtpFactory.java
+    │       ├── DefaultSmtpValidator.java       # Valida sender, destinatarios y formato de emails
+    │       └── DefaultSmtpProcessor.java
     └── models/
-        └── api/
-            ├── request/
-            │   └── PostMessageRequestModel.java
-            └── response/
-                └── CommonResponseModel.java
+        ├── api/
+        │   ├── request/
+        │   │   └── PostMessageRequestModel.java
+        │   └── response/
+        │       ├── CommonResponseModel.java
+        │       └── CommonResponseModelEnum.java
+        └── domain/
+            └── NotificationType.java           # Enum con lookup por keyName (double-checked locking)
 ```
 
 ```
 config/
-├── loki.yml                                # Retención 30 días, schema v13, TSDB
-├── promtail.yml                            # Scraping de /var/log/app/*.log
+├── loki.yml                                    # Retención 30 días, schema v13, TSDB
+├── promtail.yml                                # Scraping de /var/log/app/*.log
 └── grafana/
     └── provisioning/
         └── datasources/
-            └── loki.yml                    # Datasource Loki pre-configurado
+            └── loki.yml                        # Datasource Loki pre-configurado
 ```
